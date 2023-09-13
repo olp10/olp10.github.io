@@ -1,22 +1,30 @@
+/********************************************************************
+ * Creator          : Ólafur Pálsson - 2023
+ * File name        : frogger.js
+ * Description      : A simple frogger game made as an assignment in
+                      a Computer Graphics course
+/********************************************************************/
 
+// WebGL context
 var gl;
+
+// Object variables
+var cars = [];
+var carPoints = [];
+var colorLoc;
+var frog;
 var points = [];
 var roads = [];
-var cars = [];
-var frog;
-var carPoints = [];
 var sidewalks = [];
-var colorLoc;
 
+// Boolean for indicating the direction of the frog
 var returning = false;
-
 var score = 0;
 
 /**
  * Initializes the positions of the roads
  */
 function makeRoads() {
-/* Road initialization */
     // Bottom left, top left, top right, bottom right
     var road1 = new Float32Array([-1, (3/7), -1, (5/7), 1, (5/7), 1, (3/7)]);
     var road2 = new Float32Array([-1, (1/7), -1, (3/7), 1, (3/7), 1, (1/7)]);
@@ -26,12 +34,12 @@ function makeRoads() {
     
     roads = [ road1, road2, road3, road4, road5 ];
 
+    // Add the road points to the points array
     for (let i = 0; i < roads.length; i++) {
         for (let j = 0; j < roads[i].length; j++) {
             points.push(roads[i][j]);
         }
     }
-    /* Road initialization end */
 }
 
 /**
@@ -44,6 +52,7 @@ function makeSidewalks() {
 
     sidewalks = [ sidewalkBottom, sidewalkTop ];
 
+    // Add the sidewalk points to the points array
     for (let i = 0; i < sidewalks.length; i++) {
         for (let j = 0; j < sidewalks[i].length; j++) {
             points.push(sidewalks[i][j]);
@@ -58,9 +67,9 @@ function makeSidewalks() {
 function makeFrog() {
     /* Frog initialization */
     frog = [
-        vec2(0, -(11/14)),
-        vec2((2/14), -1),
-        vec2(-(2/14), -1),
+        vec2(0, -(12/14)),
+        vec2((1/14), -(13/14)),
+        vec2(-(1/14), -(13/14)),
     ]
 }
 
@@ -101,6 +110,7 @@ function makeCars() {
 
     cars = [ car1, car2, car3, car4, car5 ];
 
+    // Add random colors to the cars and add the car points to the carPoints array
     for (let i = 0; i < cars.length; i++) {
         cars[i].color = [Math.random(), Math.random(), Math.random(), 1.0];
         for (let j = 0; j < cars[i].length; j++) {
@@ -109,13 +119,31 @@ function makeCars() {
     }
 }
 
+/**
+ * Helper function for setting frog position 
+ */
+function setFrogPosition(a, b, c, d, e, f) {
+    frog[0][0] = a;
+    frog[0][1] = b;
+    frog[1][0] = c;
+    frog[1][1] = d;
+    frog[2][0] = e;
+    frog[2][1] = f;
+}
+
+/**
+ * Initializes the WebGL context and sets up the necessary objects and shaders.
+ */
 window.onload = function init()
 {
+    // Get the canvas element from our HTML document
     var canvas = document.getElementById( "gl-canvas" );
 
+    // Create a webgl context for the canvas
     gl = WebGLUtils.setupWebGL( canvas );
     if ( !gl ) { alert( "WebGL isn't available" ); }
 
+    // Create the objects
     makeFrog();
     makeSidewalks();
     makeRoads();
@@ -200,6 +228,14 @@ window.onload = function init()
     render(frogBuffer, layoutBuffer, carsBuffer, vPosition);
 };
 
+/**
+ * Renders the game scene by drawing the sidewalks, roads, cars, frog, and handling collisions.
+ *
+ * @param {WebGLBuffer} frogBuffer - the buffer containing the vertices of the frog
+ * @param {WebGLBuffer} sidewalkBuffer - the buffer containing the vertices of the sidewalks
+ * @param {WebGLBuffer} carsBuffer - the buffer containing the vertices of the cars
+ * @param {WebGLAttribLocation} vPosition - the attribute location for the vertex position
+ */
 function render(frogBuffer, sidewalkBuffer, carsBuffer, vPosition) {
     gl.clear( gl.COLOR_BUFFER_BIT );
 
@@ -229,6 +265,7 @@ function render(frogBuffer, sidewalkBuffer, carsBuffer, vPosition) {
     gl.uniform4fv(colorLoc, [1.0, 0.0, 0.0, 1.0]);
 
     for (let i = 0; i < cars.length; i++) {
+        // Randomize speed
         var rnd = Math.random() * (0.03 - 0.0005) + 0.0005;
         for (let j = 0; j < cars[i].length; j++) {
             cars[i][j][0] += rnd;
@@ -271,12 +308,11 @@ function render(frogBuffer, sidewalkBuffer, carsBuffer, vPosition) {
 
             // Reset frog position to start if hit by car
             if (dist < 0.1) {
-                frog[0][0] = 0.0;
-                frog[0][1] = -(11/14);
-                frog[1][0] = (2/14);
-                frog[1][1] = -1.0;
-                frog[2][0] = -(2/14);
-                frog[2][1] = -1.0;
+                if (returning) {
+                    setFrogPosition(0, (11/14), -(1/14), (12/14), (1/14), (12/14));
+                } else {
+                    setFrogPosition(0, -(12/14), (1/14), -(13/14), -(1/14), -(13/14));
+                }
 
                 // Update the frog
                 gl.bufferData( gl.ARRAY_BUFFER, flatten(frog), gl.STATIC_DRAW );
@@ -284,33 +320,21 @@ function render(frogBuffer, sidewalkBuffer, carsBuffer, vPosition) {
         }
     }
     
-    // Check if frog has reached the end of the screen
-    if (frog[0][1] >= (12/14)) {
-        frog[0][0] = 0;
-        frog[0][1] = 11/14;
-        frog[1][0] = -(2/14);
-        frog[1][1] = 1.0;
-        frog[2][0] = (2/14);
-        frog[2][1] = 1.0;
-
-        returning = true;
-
-        gl.bufferData( gl.ARRAY_BUFFER, flatten(frog), gl.STATIC_DRAW );
-    }
-
-    if (frog[0][1] <= -(12/14) && returning) {
-        frog[0][0] = 0;
-        frog[0][1] = -11/14;
-        frog[1][0] = (2/14);
-        frog[1][1] = -1.0;
-        frog[2][0] = -(2/14);
-        frog[2][1] = -1.0;
-
-        returning = false;
+    // Check if frog has crossed the roads
+    if (frog[0][1] >= (12/14) || (frog[0][1] <= -(12/14) && returning)) {
+        if (returning) {
+            setFrogPosition(0, -(12/14), (1/14), -(13/14), -(1/14), -(13/14));
+        } else {
+            setFrogPosition(0, (11/14), -(1/14), (12/14), (1/14), (12/14));
+        }
+        returning = !returning;
+        score += 1;
 
         gl.bufferData( gl.ARRAY_BUFFER, flatten(frog), gl.STATIC_DRAW );
     }
-
+    
+    // Update score text
+    document.getElementById("score").innerHTML = "Score: " + score;
     window.requestAnimFrame(() => 
         render (
             frogBuffer, 
