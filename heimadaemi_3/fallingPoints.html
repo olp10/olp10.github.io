@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
+<title>Fallandi punktar grænland</title>
+
+<script id="vertex-shader" type="x-shader/x-vertex">
+uniform float time;
+attribute vec4 vPosition;
+
+void main()
+{
+	gl_PointSize = 3.0;
+    vec4 tpos = vPosition;
+
+    tpos.y = 1.0 - mod(0.0015*time + tpos.y+1.0, 2.0);
+
+    gl_Position = tpos;
+    
+}
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+precision mediump float;
+uniform int checked;
+
+void main()
+{
+    vec2 center = vec2(0.0, 0.0);
+    float circleRadius = 0.5;
+    vec2 toCenter = gl_FragCoord.xy / vec2(600.0, 600.0) * 2.0 - 1.0 - center;
+    float distance = length(toCenter);
+
+    vec4 red = vec4(1.0, 0.0, 0.0, 1.0);
+    vec4 white = vec4(1.0, 1.0, 1.0, 1.0);
+    vec4 blue = vec4(0.0, 0.0, 1.0, 1.0);
+
+    if (checked == 1) {
+        if (gl_FragCoord.y < 300.0) {
+            if (distance < circleRadius) {
+                if (toCenter.y < 0.0) {
+                    gl_FragColor = white;
+                } else {
+                    gl_FragColor = red;
+                }
+            } else {
+                gl_FragColor = red;
+            }
+        } else {
+            if (distance < circleRadius) {
+                if (toCenter.y < 0.0) {
+                    gl_FragColor = white;
+                } else {
+                    gl_FragColor = red;
+                }
+            } else {
+                gl_FragColor = white;
+            }
+        }
+    } else {
+        if (toCenter.y < 0.2 && toCenter.y > -0.2) {
+            gl_FragColor = red;  // Horizontal red cross
+        } else if (toCenter.x < 0.2 && toCenter.x > -0.2) {
+            gl_FragColor = red;  // Vertical red cross
+        } else if (
+            (toCenter.y < 0.3 && toCenter.y > 0.1) ||
+            (toCenter.y > -0.3 && toCenter.y < -0.1) ||
+            (toCenter.x < 0.3 && toCenter.x > 0.1) ||
+            (toCenter.x > -0.3 && toCenter.x < -0.1)
+        ) {
+            gl_FragColor = white;
+        } else {
+            gl_FragColor = blue;
+        }
+    }
+}
+</script>
+
+<script type="text/javascript" src="../Common/webgl-utils.js"></script>
+<script type="text/javascript" src="../Common/initShaders.js"></script>
+<script type="text/javascript" src="../Common/MV.js"></script>
+<script type="text/javascript" src="fallingPoints.js"></script>
+</head>
+
+<body>
+    <canvas id="gl-canvas" width="600" height="600" ></canvas>
+    <form>
+        <input type="radio" name="country" id="greenland" value="greenland" checked />
+        <label for="greenland">Grænland</label>
+        <input type="radio" name="country" id="iceland" value="iceland" />
+        <label for="iceland">Ísland</label>
+    </form>
+</body>
+</html>
