@@ -1,0 +1,67 @@
+<html>
+
+<script id="vertex-shader" type="x-shader/x-vertex">
+
+    attribute  vec4 vPosition;
+    attribute  vec4 vColor;
+    varying vec4 fColor;
+    varying vec3 vNormal, vPositionEyeSpace;
+    
+    uniform vec4 uObjectColor;
+    uniform mat4 rotation;
+    uniform mat4 normalMatrix;
+    uniform vec4 lightPosition;
+    
+    void main() 
+    {
+        fColor = vColor;
+        
+        vec3 lightDirection = normalize(lightPosition.xyz - vPosition.xyz);
+        vec3 transformedNormal = normalize((normalMatrix * vec4(vNormal, 0.0)).xyz);
+        vNormal = transformedNormal;
+        vPositionEyeSpace = (rotation * vPosition).xyz;
+        fColor = uObjectColor;
+        gl_Position = rotation * vPosition;
+    }
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+
+    precision mediump float;
+   
+    varying vec4 fColor;
+    varying vec3 vNormal, vPositionEyeSpace;
+    
+    void main()
+    {
+        vec4 ambientColor = vec4(0.2, 0.2, 0.2, 1.0);
+        vec4 lightColor = vec4(1.0, 1.0, 1.0, 1.0);
+        vec4 specularColor = vec4(1.0, 1.0, 1.0, 1.0);
+        float shininess = 32.0;
+    
+        vec3 lightDirection = normalize(-vPositionEyeSpace);
+        vec3 viewDirection = normalize(-vPositionEyeSpace);
+        vec3 halfWay = normalize(lightDirection + viewDirection);
+    
+        float diffIntensity = max(dot(vNormal, lightDirection), 0.0);
+        vec4 diffuse = diffIntensity * lightColor * fColor;
+    
+        float specIntensity = pow(max(dot(halfWay, vNormal), 0.0), shininess);
+        vec4 specular = specIntensity * specularColor;
+    
+        gl_FragColor = ambientColor + diffuse + specular;
+    }
+</script>
+
+<script type="text/javascript" src="../Common/webgl-utils.js"></script>
+<script type="text/javascript" src="../Common/initShaders.js"></script>
+<script type="text/javascript" src="../Common/MV.js"></script>
+<script type="text/javascript" src="sakarius.js"></script>
+
+<body>
+<canvas id="gl-canvas" width="512"" height="512">
+   
+<br/>
+
+</body>
+</html>
