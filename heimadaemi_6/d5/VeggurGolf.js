@@ -215,7 +215,7 @@ window.onload = function init() {
          switch( e.keyCode ) {
             case 87:	// w
                 userXPos += userIncr * userXDir;
-                userZPos += userIncr * userZDir;;
+                userZPos += userIncr * userZDir;
                 break;
             case 83:	// s
                 userXPos -= userIncr * userXDir;
