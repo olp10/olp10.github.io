@@ -1,11 +1,3 @@
-/////////////////////////////////////////////////////////////////
-//    Sýnidæmi í Tölvugrafík
-//     Forrit með tveimur mynstrum.  Sýnir vegg með
-//     múrsteinsmynstri og gólf með viðarmynstri.  Það er hægt
-//     að ganga um líkanið, en það er engin árekstarvörn.
-//
-//    Hjálmtýr Hafsteinsson, mars 2022
-/////////////////////////////////////////////////////////////////
 var canvas;
 var gl;
 
@@ -29,7 +21,6 @@ var userAngle = 270.0;             // Direction of the user in degrees
 var userXDir = 0.0;                // X-coordinate of heading
 var userZDir = -1.0;               // Z-coordinate of heading
 
-
 var movement = false;
 var spinX = 0;
 var spinY = 0;
@@ -41,8 +32,8 @@ var zDist = -5.0;
 var proLoc;
 var mvLoc;
 
-// Hnútar veggsins
 var vertices = [
+    // Hnútar veggja
     vec4( -5.0,  0.0, 0.0, 1.0 ),
     vec4(  5.0,  0.0, 0.0, 1.0 ),
     vec4(  5.0,  1.0, 0.0, 1.0 ),
@@ -250,9 +241,7 @@ window.onload = function init() {
          }
      }  );  
 
-
     render();
- 
 }
 
 var render = function(){
