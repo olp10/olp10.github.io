@@ -73,8 +73,8 @@ var texCoords = [
     vec2( 10.0, 10.0 ),
     vec2(  0.0, 10.0 ),
     vec2(  0.0,  0.0 )
-];
 
+];
 
 window.onload = function init() {
 
