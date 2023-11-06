@@ -368,6 +368,8 @@ function animate() {
                         child.geometry.dispose();
                         child.material.dispose();
                     });
+
+                    // Remove the mushroom
                     mushrooms[mushroomIndex]._toBeRemoved = true;
                 }
                 switch (mushroom.health) {
