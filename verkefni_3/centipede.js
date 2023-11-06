@@ -69,6 +69,7 @@ window.onload = function init()
         scene.add(mushroom);
     }
 
+    // Add environment to the scene
     createGround();
     createGroundBack();
 
@@ -78,17 +79,17 @@ window.onload = function init()
 
     // Testing text
     var loader = new THREE.FontLoader();
-    loader.load( 'helvetiker_bold.typeface.json', function ( font ) {
+    loader.load( 'helvetiker_regular.typeface.json', function ( font ) {
         var txt = new THREE.TextGeometry("text", {
             font: font,
-            size: 2,
+            size: 1,
             height: 0.5
         });
     
         // Create a material and mesh for the text
         var txtMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
         var txtMesh = new THREE.Mesh(txt, txtMaterial);
-        txtMesh.scale.set(2.5, 2.5, 2.5);
+        txtMesh.position.set(gnome.position.x, gnome.position.y + 2, gnome.position.z);
         scene.add(txtMesh);
     });
 
