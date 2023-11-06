@@ -55,6 +55,8 @@ window.onload = function init()
     renderer.setSize(window.innerWidth * 0.95, window.innerHeight * 0.95);
     renderer.setClearColor(0xffffff, 0.2);
     document.body.appendChild( renderer.domElement );
+    
+    loader = new THREE.FontLoader();
 
     // Camera settings
     camera.position.set(0, -20, 30);
@@ -82,7 +84,6 @@ window.onload = function init()
     createCentipede();
     createGnome();
 
-    loader = new THREE.FontLoader();
     
 
     // Add event listener for arrow buttons
@@ -202,7 +203,7 @@ function addScore(score, item) {
         
         // Position the text above the mushroom
         txtMesh.position.set(item.position.x - 1, item.position.y + 1, item.position.z);
-        //txtMesh.rotation.z = Math.PI;
+        txtMesh.rotation.x = Math.PI / 2;
         txtMesh.scale.set(1.0, 1.0, 0.1);
         scene.add(txtMesh);
 
