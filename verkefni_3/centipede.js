@@ -93,8 +93,7 @@ window.onload = function init()
 
     // Add event listener for arrow buttons
     window.addEventListener('keydown', function(event) {
-        // FIXME: Shitty code, but it works
-        if (event.key === 'ArrowUp' && gnome.position.y < -13) {
+        if ((event.key === 'w' ||event.key === 'ArrowUp') && gnome.position.y < -13) {
             let canMove = true;
             mushrooms.forEach(mushroom => {
                 if (mushroom.position.x === gnome.position.x && mushroom.position.y - 1 - gnome.position.y === 1.0) {
