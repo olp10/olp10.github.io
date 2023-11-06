@@ -355,6 +355,7 @@ function animate() {
                         var txtMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
                         var txtMesh = new THREE.Mesh(txt, txtMaterial);
                         
+                        // Position the text above the mushroom
                         txtMesh.position.set(mushroom.position.x - 1, mushroom.position.y + 1, mushroom.position.z);
                         txtMesh.rotation.x = -Math.PI / 3;
                         scene.add(txtMesh);
