@@ -88,6 +88,7 @@ window.onload = function init()
         // Create a material and mesh for the text
         var txtMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
         var txtMesh = new THREE.Mesh(txt, txtMaterial);
+        
         txtMesh.position.set(gnome.position.x, gnome.position.y + 2, gnome.position.z);
         scene.add(txtMesh);
     });
