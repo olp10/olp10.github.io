@@ -361,7 +361,7 @@ function animate() {
             centipede.splice(segIndex, 1);
             right.splice(segIndex, 1);
 
-            drawScorePopup(50, segment);
+            addScore(50, segment);
         }
     });
 
@@ -373,7 +373,7 @@ function animate() {
                 // Check if the mushroom is dead
                 if (mushroom.health === 0) {
 
-                    drawScorePopup(100, mushroom);
+                    addScore(100, mushroom);
 
                     scene.remove(mushroom);
                     mushroom.children.forEach((child) => {
