@@ -347,7 +347,7 @@ function animate() {
                     loader.load( 'helvetiker_regular.typeface.json', function ( font ) {
                         var txt = new THREE.TextGeometry("+100", {
                             font: font,
-                            size: 1,
+                            size: 0.5,
                             height: 0.5
                         });
                     
@@ -356,6 +356,7 @@ function animate() {
                         var txtMesh = new THREE.Mesh(txt, txtMaterial);
                         
                         txtMesh.position.set(mushroom.position.x - 1, mushroom.position.y + 1, mushroom.position.z);
+                        txtMesh.rotation.x = -Math.PI / 3;
                         scene.add(txtMesh);
 
                         fadingTextMeshes.push({mesh: txtMesh, startTime: Date.now() });
@@ -428,7 +429,7 @@ function animate() {
     fadingTextMeshes.forEach((textObj, index) => {
         var currentTime = Date.now();
         var elapsedTime = currentTime - textObj.startTime;
-        var fadeDuration = 2000; // Adjust the duration as needed (in milliseconds)
+        var fadeDuration = 500; // Adjust the duration as needed (in milliseconds)
 
         // Calculate opacity based on elapsed time and fade duration
         var opacity = 1 - Math.min(1, elapsedTime / fadeDuration);
