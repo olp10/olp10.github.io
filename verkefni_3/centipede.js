@@ -76,6 +76,7 @@ window.onload = function init()
     createCentipede();
     createGnome();
 
+    // Testing text
     var loader = new THREE.FontLoader();
     loader.load( 'helvetiker_bold.typeface.json', function ( font ) {
         var txt = new THREE.TextGeometry("text", {
@@ -101,21 +102,21 @@ window.onload = function init()
                 }
             });
             if (canMove) gnome.position.y += 1;
-        } else if (event.key === 'ArrowDown' && gnome.position.y > -18) {
+        } else if ((event.key === 's' || event.key === 'ArrowDown') && gnome.position.y > -18) {
             let canMove = true;
             mushrooms.forEach(mushroom => {
                 if (mushroom.position.x === gnome.position.x && gnome.position.y - mushroom.position.y - 1 === -1.0)
                     canMove = false;
             })
             if (canMove) gnome.position.y -= 1;
-        } else if (event.key === 'ArrowLeft' && gnome.position.x > -16) {
+        } else if ((event.key === 'a' || event.key === 'ArrowLeft') && gnome.position.x > -16) {
             let canMove = true;
             mushrooms.forEach(mushroom => {
                 if (mushroom.position.y - 1 === gnome.position.y && gnome.position.x - mushroom.position.x === 1.0)
                     canMove = false;
             })
             if (canMove) gnome.position.x -= 1;
-        } else if (event.key === 'ArrowRight' && gnome.position.x < 16) {
+        } else if ((event.key === 'd' || event.key === 'ArrowRight') && gnome.position.x < 16) {
             let canMove = true;
             mushrooms.forEach(mushroom => {
                 if (mushroom.position.y - 1 === gnome.position.y && gnome.position.x - mushroom.position.x === -1.0)
