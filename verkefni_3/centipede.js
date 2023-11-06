@@ -17,6 +17,8 @@ var centipede = [];
 var start = true;
 var mushrooms = [];
 
+var playerScore = 0;
+
 var leftWall = createWallAtColumn(0);
 var rightWall = createWallAtColumn(GRID_COLUMNS - 1);
 
@@ -186,6 +188,31 @@ function createWallAtColumn(column) {
     return wall;
 }
 
+function addScore(score, item) {
+    loader.load( 'helvetiker_regular.typeface.json', function ( font ) {
+        var txt = new THREE.TextGeometry(`+${score}`, {
+            font: font,
+            size: 0.5,
+            height: 0.5
+        });
+    
+        // Create a material and mesh for the text
+        var txtMaterial = new THREE.MeshBasicMaterial({ color: 0xffff4d });
+        var txtMesh = new THREE.Mesh(txt, txtMaterial);
+        
+        // Position the text above the mushroom
+        txtMesh.position.set(item.position.x - 1, item.position.y + 1, item.position.z);
+        //txtMesh.rotation.z = Math.PI;
+        txtMesh.scale.set(1.0, 1.0, 0.1);
+        scene.add(txtMesh);
+
+        fadingTextMeshes.push({mesh: txtMesh, startTime: Date.now() });
+    });
+
+    playerScore += score;
+    console.log('Score >> ', playerScore);
+}
+
 function createGnome() {
     // Create gnome object
     var gnomeGeometry = new THREE.BoxGeometry();
@@ -334,25 +361,7 @@ function animate() {
             centipede.splice(segIndex, 1);
             right.splice(segIndex, 1);
 
-            loader.load( 'helvetiker_regular.typeface.json', function ( font ) {
-                var txt = new THREE.TextGeometry("+50", {
-                    font: font,
-                    size: 0.5,
-                    height: 0.5
-                });
-            
-                // Create a material and mesh for the text
-                var txtMaterial = new THREE.MeshBasicMaterial({ color: 0xffff4d });
-                var txtMesh = new THREE.Mesh(txt, txtMaterial);
-                
-                // Position the text above the mushroom
-                txtMesh.position.set(segment.position.x - 1, segment.position.y + 1, segment.position.z);
-                //txtMesh.rotation.z = Math.PI;
-                txtMesh.scale.set(1.0, 1.0, 0.1);
-                scene.add(txtMesh);
-
-                fadingTextMeshes.push({mesh: txtMesh, startTime: Date.now() });
-            });
+            drawScorePopup(50, segment);
         }
     });
 
@@ -364,25 +373,7 @@ function animate() {
                 // Check if the mushroom is dead
                 if (mushroom.health === 0) {
 
-                    loader.load( 'helvetiker_regular.typeface.json', function ( font ) {
-                        var txt = new THREE.TextGeometry("+100", {
-                            font: font,
-                            size: 0.5,
-                            height: 0.5
-                        });
-                    
-                        // Create a material and mesh for the text
-                        var txtMaterial = new THREE.MeshBasicMaterial({ color: 0xffff4d });
-                        var txtMesh = new THREE.Mesh(txt, txtMaterial);
-                        
-                        // Position the text above the mushroom
-                        txtMesh.position.set(mushroom.position.x - 1, mushroom.position.y + 1, mushroom.position.z);
-                        //txtMesh.rotation.z = Math.PI;
-                        txtMesh.scale.set(1.0, 1.0, 0.1);
-                        scene.add(txtMesh);
-
-                        fadingTextMeshes.push({mesh: txtMesh, startTime: Date.now() });
-                    });
+                    drawScorePopup(100, mushroom);
 
                     scene.remove(mushroom);
                     mushroom.children.forEach((child) => {
