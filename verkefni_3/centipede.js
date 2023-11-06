@@ -333,6 +333,26 @@ function animate() {
             segment.material.dispose();
             centipede.splice(segIndex, 1);
             right.splice(segIndex, 1);
+
+            loader.load( 'helvetiker_regular.typeface.json', function ( font ) {
+                var txt = new THREE.TextGeometry("+50", {
+                    font: font,
+                    size: 0.5,
+                    height: 0.5
+                });
+            
+                // Create a material and mesh for the text
+                var txtMaterial = new THREE.MeshBasicMaterial({ color: 0xffff4d });
+                var txtMesh = new THREE.Mesh(txt, txtMaterial);
+                
+                // Position the text above the mushroom
+                txtMesh.position.set(segment.position.x - 1, segment.position.y + 1, segment.position.z);
+                //txtMesh.rotation.z = Math.PI;
+                txtMesh.scale.set(1.0, 1.0, 0.1);
+                scene.add(txtMesh);
+
+                fadingTextMeshes.push({mesh: txtMesh, startTime: Date.now() });
+            });
         }
     });
 
