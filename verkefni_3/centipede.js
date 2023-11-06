@@ -359,6 +359,7 @@ function animate() {
                         txtMesh.position.set(mushroom.position.x - 1, mushroom.position.y + 1, mushroom.position.z);
                         txtMesh.rotation.x = Math.PI / 2;
                         txtMesh.rotation.z = Math.PI;
+                        txtMesh.scale.set(1.0, 1.0, 0.1);
                         scene.add(txtMesh);
 
                         fadingTextMeshes.push({mesh: txtMesh, startTime: Date.now() });
