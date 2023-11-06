@@ -77,7 +77,7 @@ window.onload = function init()
     createGnome();
 
     var loader = new THREE.FontLoader();
-    loader.load( 'helvetiker_regular.typeface.json', function ( font ) {
+    loader.load( 'helvetiker_bold.typeface.json', function ( font ) {
         var txt = new THREE.TextGeometry("text", {
             font: font,
             size: 2,
