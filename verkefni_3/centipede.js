@@ -20,6 +20,9 @@ var mushrooms = [];
 var leftWall = createWallAtColumn(0);
 var rightWall = createWallAtColumn(GRID_COLUMNS - 1);
 
+var loader;
+var fadingTextMeshes = [];
+
 /**
  * Converts grid coordinates to world coordinates
  * @param {*} gridX 
@@ -77,21 +80,8 @@ window.onload = function init()
     createCentipede();
     createGnome();
 
-    var loader = new THREE.FontLoader();
-    loader.load( 'helvetiker_regular.typeface.json', function ( font ) {
-        var txt = new THREE.TextGeometry("+100", {
-            font: font,
-            size: 1,
-            height: 0.5
-        });
+    loader = new THREE.FontLoader();
     
-        // Create a material and mesh for the text
-        var txtMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
-        var txtMesh = new THREE.Mesh(txt, txtMaterial);
-        
-        txtMesh.position.set(gnome.position.x, gnome.position.y + 2, gnome.position.z);
-        scene.add(txtMesh);
-    });
 
     // Add event listener for arrow buttons
     window.addEventListener('keydown', function(event) {
@@ -353,6 +343,24 @@ function animate() {
                 
                 // Check if the mushroom is dead
                 if (mushroom.health === 0) {
+
+                    loader.load( 'helvetiker_regular.typeface.json', function ( font ) {
+                        var txt = new THREE.TextGeometry("+100", {
+                            font: font,
+                            size: 1,
+                            height: 0.5
+                        });
+                    
+                        // Create a material and mesh for the text
+                        var txtMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+                        var txtMesh = new THREE.Mesh(txt, txtMaterial);
+                        
+                        txtMesh.position.set(mushroom.position.x - 1, mushroom.position.y + 1, mushroom.position.z);
+                        scene.add(txtMesh);
+
+                        fadingTextMeshes.push({mesh: txtMesh, startTime: Date.now() });
+                    });
+
                     scene.remove(mushroom);
                     mushroom.children.forEach((child) => {
                         child.geometry.dispose();
@@ -415,6 +423,30 @@ function animate() {
         }
 
         right[i] ? segment.position.x += (0.2) : segment.position.x -= (0.2);
+    });
+
+    fadingTextMeshes.forEach((textObj, index) => {
+        var currentTime = Date.now();
+        var elapsedTime = currentTime - textObj.startTime;
+        var fadeDuration = 2000; // Adjust the duration as needed (in milliseconds)
+
+        // Calculate opacity based on elapsed time and fade duration
+        var opacity = 1 - Math.min(1, elapsedTime / fadeDuration);
+
+        // Update the text mesh's opacity
+        textObj.mesh.material.opacity = opacity;
+
+        if (opacity <= 0) {
+            // Remove the text mesh from the scene
+            scene.remove(textObj.mesh);
+
+            // Dispose of its geometry and material
+            textObj.mesh.geometry.dispose();
+            textObj.mesh.material.dispose();
+
+            // Remove it from the fadingTextMeshes array
+            fadingTextMeshes.splice(index, 1);
+        }
     });
 
     if (centipede.length === 0 && ! start) {
