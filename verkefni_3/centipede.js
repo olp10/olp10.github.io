@@ -77,10 +77,9 @@ window.onload = function init()
     createCentipede();
     createGnome();
 
-    // Testing text
     var loader = new THREE.FontLoader();
     loader.load( 'helvetiker_regular.typeface.json', function ( font ) {
-        var txt = new THREE.TextGeometry("text", {
+        var txt = new THREE.TextGeometry("+100", {
             font: font,
             size: 1,
             height: 0.5
