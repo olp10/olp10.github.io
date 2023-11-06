@@ -203,7 +203,9 @@ function addScore(score, item) {
         
         // Position the text above the mushroom
         txtMesh.position.set(item.position.x - 1, item.position.y + 1, item.position.z);
-        txtMesh.rotation.x = Math.PI / 2;
+
+        if (item.position.y > 0)
+            txtMesh.rotation.x = Math.PI / 2;
         txtMesh.scale.set(1.0, 1.0, 0.1);
         scene.add(txtMesh);
 
