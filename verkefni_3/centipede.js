@@ -352,7 +352,7 @@ function animate() {
                         });
                     
                         // Create a material and mesh for the text
-                        var txtMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+                        var txtMaterial = new THREE.MeshBasicMaterial({ color: 0xffff4d });
                         var txtMesh = new THREE.Mesh(txt, txtMaterial);
                         
                         // Position the text above the mushroom
