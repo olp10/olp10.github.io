@@ -1,29 +1,53 @@
 var canvas;
 var gl;
 
-var scene = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-var renderer = new THREE.WebGLRenderer();
-
+// GRID CONSTANTS
 var GRID_COLUMNS = 16;
 var GRID_ROWS = 15;
 var CELL_SIZE = 2;
 
+// SCORE CONSTANTS
+var SEGMENT_KILL_POINTS = 10;
+var MUSHROOM_KILL_POINTS = 1;
+
+// MUSHROOM CONSTANTS
+var MUSHROOM_DEFAULT_SCALE = 0.5;
+var MUSHROOM_MEDIUM_DAMAGE_SCALE = 0.4;
+var MUSHROOM_LARGE_DAMAGE_SCALE = 0.3;
+
+// COLORS
+var WHITE = 0xffffff;
+var RED = 0xff0000;
+var GREEN = 0x00ff00;
+var BLUE = 0x0000ff;
+var CENTIPEDE_COLOR = 0xffff00;
+
+// OTHER CONSTANTS
+var SHOT_DELAY = 200;
+
+// SCENE
+var scene = new THREE.Scene();
+var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+var renderer = new THREE.WebGLRenderer();
+var light;
+var loader;
+
 // Boolean for checking if centipede is moving to the right or left
 var right = [false, false, false, false, false, false];
 
+// OBJECTS
 var gnome;
 var centipede = [];
-var start = true;
 var mushrooms = [];
+var bullets = [];
+var leftWall;
+var rightWall;
 
+// VARYING
+var fadingTextScoreMeshes = [];
+var timeOfLastShot;
+var start = true;
 var playerScore = 0;
-
-var leftWall = createWallAtColumn(0);
-var rightWall = createWallAtColumn(GRID_COLUMNS - 1);
-
-var loader;
-var fadingTextMeshes = [];
 
 /**
  * Converts grid coordinates to world coordinates
@@ -53,28 +77,34 @@ window.onload = function init()
 {
     // 95% because needed to scroll around the page to see the whole thing
     renderer.setSize(window.innerWidth * 0.95, window.innerHeight * 0.95);
-    renderer.setClearColor(0xffffff, 0.2);
+    renderer.setClearColor(WHITE, 0.2);
     document.body.appendChild( renderer.domElement );
     
     loader = new THREE.FontLoader();
 
     // Camera settings
+    //camera.position.set(0, -GRID_ROWS - 10, 0);
     camera.position.set(0, -20, 30);
     camera.lookAt(scene.position);
     
     // Create mushrooms
-    for (let i = 0; i < 14; i++) {
+    for (let i = 1; i < 14; i++) {
         var mushroom = createMushroom();
         mushrooms.push(mushroom);
-
-        // Position the mushroom
+        
+        // Position the mushroom, one at each row i in the grid
         var position = gridToWorld((Math.floor(Math.random() * 100)) % 14, i);
-        mushroom.position.set(position.x, position.y, 10);
-
+        mushroom.position.set(position.x, position.y, -0.5);
+        
         // scale mushroom down
         mushroom.scale.set(0.5, 0.5, 0.5);
+        
+        // Finally add mushroom to the scene
         scene.add(mushroom);
     }
+
+    leftWall = createWallAtColumn(-0.4);
+    rightWall = createWallAtColumn(GRID_COLUMNS-0.6);
 
     // Add environment to the scene
     createGround();
@@ -83,8 +113,6 @@ window.onload = function init()
     // Add the centipede and gnome to the scene
     createCentipede();
     createGnome();
-
-    
 
     // Add event listener for arrow buttons
     window.addEventListener('keydown', function(event) {
@@ -121,14 +149,18 @@ window.onload = function init()
             shoot();
         }
     });
+    
+    light = new THREE.DirectionalLight( WHITE, 3, 100);
+    light.position.set( 10, -10, 5 );
+    scene.add( light );
 }
 
 function createGround() {
-    var groundSizeX = 51;
-    var groundSizeY = 86;
+    var groundSizeX = GRID_COLUMNS * CELL_SIZE;
+    var groundSizeY = GRID_ROWS * CELL_SIZE;
 
     var groundGeometry = new THREE.PlaneGeometry(groundSizeX, groundSizeY);
-    var groundMaterial = new THREE.MeshBasicMaterial({ color: 0x222222, side: THREE.DoubleSide });
+    var groundMaterial = new THREE.MeshPhongMaterial({ color: 0x222222, side: THREE.DoubleSide });
 
     var ground = new THREE.Mesh(groundGeometry, groundMaterial);
 
@@ -140,17 +172,16 @@ function createGround() {
 }
 
 function createGroundBack() {
-    var groundSizeX = 51;
-    var groundSizeY = 10;
+    var groundSizeX = GRID_COLUMNS * CELL_SIZE;
+    var groundSizeY = CELL_SIZE;
 
     var groundGeometry = new THREE.PlaneGeometry(groundSizeX, groundSizeY);
-    var groundMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide });
+    var groundMaterial = new THREE.MeshPhongMaterial({ color: RED, side: THREE.DoubleSide });
 
     var ground = new THREE.Mesh(groundGeometry, groundMaterial);
 
-    ground.rotation.x = -Math.PI;
-    ground.position.y = -22;
-    ground.position.z = -0.4;
+    ground.position.y = -GRID_ROWS-1;
+    ground.position.z = 0;
 
     scene.add(ground);
 }
@@ -160,7 +191,7 @@ function createGroundBack() {
  */
 function createCentipede() {
     var segmentGeometry = new THREE.SphereGeometry();
-    var segmentMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
+    var segmentMaterial = new THREE.MeshPhongMaterial( { color: CENTIPEDE_COLOR } );
 
     // Create 6 centipede segments
     for (let i = 0; i < 6; i++) {
@@ -171,26 +202,26 @@ function createCentipede() {
         if (i !== 0) segment.scale.set(0.5, 0.5, 0.5);
         else segment.scale.set(0.6, 0.6, 0.6);
 
-        segment.position.set(0 + i*1.2, 18, 10);
+        segment.position.set(0 + i, GRID_ROWS - 1, 0);
         scene.add(segment);
     }
     start = false;
 }
 
 function createWallAtColumn(column) {
-    var wallGeometry = new THREE.BoxGeometry(0.1, GRID_ROWS * CELL_SIZE + 8, 0.2);
-    var wallMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: false, opacity: 0 });
+    var wallGeometry = new THREE.BoxGeometry(0.4, GRID_ROWS * CELL_SIZE, 0.1);
+    var wallMaterial = new THREE.MeshPhongMaterial({ color: RED, transparent: false, opacity: 0 });
     var wall = new THREE.Mesh(wallGeometry, wallMaterial);
 
     var position = gridToWorld(column, GRID_ROWS / 2);
-    wall.position.set(position.x, position.y - 3, 12);
+    wall.position.set(position.x, 0, -0.05);
     scene.add(wall);
 
     return wall;
 }
 
 function addScore(score, item) {
-    loader.load( 'helvetiker_regular.typeface.json', function ( font ) {
+    loader.load( 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/fonts/helvetiker_regular.typeface.json', function ( font ) {
         var txt = new THREE.TextGeometry(`+${score}`, {
             font: font,
             size: 0.5,
@@ -198,7 +229,7 @@ function addScore(score, item) {
         });
     
         // Create a material and mesh for the text
-        var txtMaterial = new THREE.MeshBasicMaterial({ color: 0xffff4d });
+        var txtMaterial = new THREE.MeshPhongMaterial({ color: 0xffff4d });
         var txtMesh = new THREE.Mesh(txt, txtMaterial);
         
         // Position the text above the mushroom
@@ -209,29 +240,28 @@ function addScore(score, item) {
         txtMesh.scale.set(1.0, 1.0, 0.1);
         scene.add(txtMesh);
 
-        fadingTextMeshes.push({mesh: txtMesh, startTime: Date.now() });
+        fadingTextScoreMeshes.push({mesh: txtMesh, startTime: Date.now() });
     });
 
     playerScore += score;
-    console.log('Score >> ', playerScore);
 }
 
 function createGnome() {
     // Create gnome object
     var gnomeGeometry = new THREE.BoxGeometry();
-    var gnomeMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+    var gnomeMaterial = new THREE.MeshPhongMaterial( { color: GREEN } );
     var gnomeBody = new THREE.Mesh(gnomeGeometry, gnomeMaterial);
     gnomeBody.position.y = 1.5;
 
     // Hat
     var gnomeHatGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.3);
-    var gnomeHatMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff } );
+    var gnomeHatMaterial = new THREE.MeshPhongMaterial( { color: WHITE } );
     var gnomeHat = new THREE.Mesh(gnomeHatGeometry, gnomeHatMaterial);
     gnomeHat.position.y = 2.3;
 
     // Belly
     var gnomeBellyGeometry = new THREE.SphereGeometry(0.7, 6, 10);
-    var gnomeBellyMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+    var gnomeBellyMaterial = new THREE.MeshPhongMaterial( { color: GREEN } );
     var gnomeBelly = new THREE.Mesh(gnomeBellyGeometry, gnomeBellyMaterial);
     gnomeBelly.position.y = 1.5;
     gnomeBelly.position.z = 0.0;
@@ -239,19 +269,19 @@ function createGnome() {
 
     // Left Eye
     var gnomeLeftEyeGeometry = new THREE.SphereGeometry(0.15, 6, 10);
-    var gnomeLeftEyeMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff } );
+    var gnomeLeftEyeMaterial = new THREE.MeshPhongMaterial( { color: WHITE } );
     var gnomeLeftEye = new THREE.Mesh(gnomeLeftEyeGeometry, gnomeLeftEyeMaterial);
     gnomeLeftEye.position.x = -0.4;
     gnomeLeftEye.position.y = 1.5;
-    gnomeLeftEye.position.z = 1.0;
+    gnomeLeftEye.position.z = 0.5;
 
     // Right Eye
     var gnomeRightEyeGeometry = new THREE.SphereGeometry(0.15, 6, 10);
-    var gnomeRightEyeMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff } );
+    var gnomeRightEyeMaterial = new THREE.MeshPhongMaterial( { color: WHITE } );
     var gnomeRightEye = new THREE.Mesh(gnomeRightEyeGeometry, gnomeRightEyeMaterial);
     gnomeRightEye.position.x = 0.4;
     gnomeRightEye.position.y = 1.5;
-    gnomeRightEye.position.z = 1.0;
+    gnomeRightEye.position.z = 0.5;
 
     // Create the group of objects making the gnome
     gnome = new THREE.Group();
@@ -264,9 +294,9 @@ function createGnome() {
     gnome.add(gnomeRightEye);
 
     // Configure gnome position/scale, and add to scene
-    var gnomeGridPosition = { x: 7.5, y: -2 };
+    var gnomeGridPosition = { x: 7.5, y: 0 };
     var gnomeWorldPosition = gridToWorld(gnomeGridPosition.x, gnomeGridPosition.y);
-    gnome.position.set(gnomeWorldPosition.x, gnomeWorldPosition.y, 10);
+    gnome.position.set(gnomeWorldPosition.x, gnomeWorldPosition.y, 0);
     gnome.scale.set(0.4, 0.5, 0.5);
     scene.add(gnome);
 }
@@ -276,8 +306,8 @@ function createGnome() {
  * @returns {THREE.Group}
  */
 function createMushroom() {
-    var stemMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff } );
-    var capMaterial = new THREE.MeshBasicMaterial( { color: 0xe60000 } );
+    var stemMaterial = new THREE.MeshPhongMaterial( { color: WHITE } );
+    var capMaterial = new THREE.MeshPhongMaterial( { color: 0xe60000 } );
 
     var stemGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
     var stem = new THREE.Mesh(stemGeometry, stemMaterial);
@@ -303,10 +333,16 @@ function createMushroom() {
     return mushroom;
 }
 
-function isColliding(segment, mushroom) {
-    var dx = segment.position.x - mushroom.position.x;
-    var dy = segment.position.y - mushroom.position.y;
-    var dz = segment.position.z - mushroom.position.z;
+/**
+ * 
+ * @param {*} segment 
+ * @param {*} mushroom 
+ * @returns 
+ */
+function isColliding(thisItem, thatItem) {
+    var dx = thisItem.position.x - thatItem.position.x;
+    var dy = thisItem.position.y - thatItem.position.y;
+    var dz = thisItem.position.z - thatItem.position.z;
 
     var distanceSquared = dx * dx + dy * dy + dz * dz;
     var radiiSum = (CELL_SIZE / 2) * (CELL_SIZE / 2);
@@ -314,17 +350,24 @@ function isColliding(segment, mushroom) {
     return distanceSquared <= radiiSum;
 }
 
-var bullets = [];
-var bulletGeometry = new THREE.BoxGeometry(0.05, 0.5, 0.05);
-var bulletMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
 
 function shoot() {
+    var bulletGeometry = new THREE.BoxGeometry(0.1, 0.9, 0.05);
+    var bulletMaterial = new THREE.MeshPhongMaterial({ color: BLUE });
+
+    // Delay between shots
+    if (timeOfLastShot && Date.now() - timeOfLastShot < SHOT_DELAY) return;
+
     var bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+
     bullet.position.copy(gnome.position);
-    bullet.position.z += 0.5;
+    //bullet.position.z += 0.5;
     bullet.velocity = new THREE.Vector3(0, 1, 0);
+
     scene.add(bullet);
     bullets.push(bullet);
+
+    timeOfLastShot = Date.now();
 }
 
 function animate() {
@@ -341,32 +384,39 @@ function animate() {
         }
 
         centipede.forEach((segment, segIndex) => {
-        if (isColliding(bullet, segment)) {
-            // Remove bullet
-            scene.remove(bullet);
-            bullet.geometry.dispose();
-            bullet.material.dispose();
-            bullets.splice(index, 1);
+            if (isColliding(bullet, segment)) {
+                // Remove bullet
+                scene.remove(bullet);
+                bullet.geometry.dispose();
+                bullet.material.dispose();
+                bullets.splice(index, 1);
 
-            if (segIndex > 0 && segIndex < centipede.length - 1) {
-                let newPart = centipede.splice(segIndex + 1);
-                right.splice(segIndex + 1);
-                right[segIndex] = !right[segIndex];
-                newPart.forEach((_, newPartIndex) => {
-                    right.push(!right[segIndex]);
-                });
+                if (segIndex > 0 && segIndex < centipede.length - 1) {
+                    let newPart = centipede.splice(segIndex + 1);
+                    right.splice(segIndex + 1);
+                    right[segIndex] = !right[segIndex];
+                    newPart.forEach((_, newPartIndex) => {
+                        right.push(!right[segIndex]);
+                    });
+                }
+                
+                // Remove segment
+                scene.remove(segment);
+                segment.geometry.dispose();
+                segment.material.dispose();
+                centipede.splice(segIndex, 1);
+                right.splice(segIndex, 1);
+
+                // Add a mushroom at the location where a segment was destroyed
+                var mushroom = createMushroom();
+                mushroom.position.copy(segment.position);
+                mushrooms.push(mushroom);
+                scene.add(mushroom);
+
+                // Points for destroying a segment
+                addScore(SEGMENT_KILL_POINTS, segment);
             }
-            
-            // Remove segment
-            scene.remove(segment);
-            segment.geometry.dispose();
-            segment.material.dispose();
-            centipede.splice(segIndex, 1);
-            right.splice(segIndex, 1);
-
-            addScore(50, segment);
-        }
-    });
+        });
 
         mushrooms.forEach((mushroom, mushroomIndex) => {
             if (isColliding(bullet, mushroom)) {
@@ -376,7 +426,7 @@ function animate() {
                 // Check if the mushroom is dead
                 if (mushroom.health === 0) {
 
-                    addScore(100, mushroom);
+                    addScore(MUSHROOM_KILL_POINTS, mushroom);
 
                     scene.remove(mushroom);
                     mushroom.children.forEach((child) => {
@@ -389,13 +439,13 @@ function animate() {
                 }
                 switch (mushroom.health) {
                     case 2:
-                        mushroom.scale.set(0.4, 0.4, 0.4);
+                        mushroom.scale.set(MUSHROOM_MEDIUM_DAMAGE_SCALE, MUSHROOM_MEDIUM_DAMAGE_SCALE, MUSHROOM_MEDIUM_DAMAGE_SCALE);
                         break;
                     case 1:
-                        mushroom.scale.set(0.3, 0.3, 0.3);
+                        mushroom.scale.set(MUSHROOM_LARGE_DAMAGE_SCALE, MUSHROOM_LARGE_DAMAGE_SCALE, MUSHROOM_LARGE_DAMAGE_SCALE);
                         break;
                     default:
-                        mushroom.scale.set(0.5, 0.5, 0.5);
+                        mushroom.scale.set(MUSHROOM_DEFAULT_SCALE, MUSHROOM_DEFAULT_SCALE, MUSHROOM_DEFAULT_SCALE);
                 }
                 scene.remove(bullet);
                 bullet.children.forEach((child) => {
@@ -421,13 +471,8 @@ function animate() {
              alert("GAME OVER");
         }
 
-        // Change direction if at end of screen
-        if (segment.position.x <= -18.0 || segment.position.x >= 18.0) {
-            right[i] = !right[i];
-            segment.position.y -= 2.0;
-        }
-
-        if (segment.position.x <= leftWall.position.x || segment.position.x >= rightWall.position.x) {
+        if (segment.position.x - CELL_SIZE / 2 <= leftWall.position.x 
+            || segment.position.x + CELL_SIZE / 2 >= rightWall.position.x) {
             right[i] = !right[i]; // Change direction
             segment.position.y -= 2.0; // Move down a row
         }
@@ -444,7 +489,7 @@ function animate() {
         right[i] ? segment.position.x += (0.2) : segment.position.x -= (0.2);
     });
 
-    fadingTextMeshes.forEach((textObj, index) => {
+    fadingTextScoreMeshes.forEach((textObj, index) => {
         var currentTime = Date.now();
         var elapsedTime = currentTime - textObj.startTime;
         var fadeDuration = 500; // Adjust the duration as needed (in milliseconds)
@@ -464,7 +509,7 @@ function animate() {
             textObj.mesh.material.dispose();
 
             // Remove it from the fadingTextMeshes array
-            fadingTextMeshes.splice(index, 1);
+            fadingTextScoreMeshes.splice(index, 1);
         }
     });
 
@@ -472,7 +517,6 @@ function animate() {
         createCentipede();
         right = [false, false, false, false, false, false];
     }
-
     renderer.render(scene, camera);
 }
 animate();
